@@ -1,36 +1,36 @@
 import { test, expect } from '@playwright/test';
-import { ContactPage } from '../pages/ContactPage.js';
 
-const CONTACT_DATA = {
-    email: `test_contact_${Date.now()}@testmail.com`,
-    name: 'Functional Tester',
-    message: 'This is a functional test message for contact form verification.'
-};
 
-test.describe('F7: Contact Form Tests (Functional Test)', () => {
-    
-    /**
-     * NOT: Bu test site kaynaklı senkronizasyon (alert) sorunları nedeniyle 
-     * bazı ortamlarda kararsız (flaky) davranabilir.
-     */
-    test('F7: User can successfully submit the contact form', async ({ page }) => {
-        // Testin çok uzun sürüp tüm süreci tıkamasını önlemek için timeout
-        test.setTimeout(60000);
 
-        const contactPage = new ContactPage(page);
+test.describe('F7: About Us Content & Modal Tests', () => {
 
-        // 1. Ana sayfaya git
+    test('F7: User can access the video modal and verify its content', async ({ page }) => {
+   
         await page.goto('/');
 
-        // 2. İletişim modalını aç
-        await contactPage.openContactModal();
+ 
+        await page.getByRole('link', { name: 'About us' }).click();
 
-        // 3. Formu doldur ve alert mesajını yakala
-        const alertMessage = await contactPage.sendMessage(CONTACT_DATA);
+     
+        const videoModal = page.locator('#videoModal');
+        await expect(videoModal).toBeVisible({ timeout: 10000 });
+
+    
+        const modalTitle = page.locator('#videoModalLabel');
+        await expect(modalTitle).toHaveText('About us');
+
         
-        // 4. Doğrulama (Assertion)
-        await contactPage.verifySuccessMessage(alertMessage);
-        
-        console.log(`✅ F7 Completed: Contact form submission verified.`);
+        const videoPlayer = page.locator('video.vjs-tech');
+        await expect(videoPlayer).toBeAttached(); 
+        await expect(videoPlayer).toBeVisible();  
+
+   
+        const closeButton = page.locator('#videoModal .modal-footer button:has-text("Close")');
+        await closeButton.click();
+
+     
+        await expect(videoModal).toBeHidden();
+
+        console.log(`✅ F7 Completed: Video modal and content verified successfully.`);
     });
 });

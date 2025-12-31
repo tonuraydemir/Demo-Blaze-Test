@@ -15,16 +15,16 @@ test.describe('S3: Register & Login (E2E Smoke Test)', () => {
             password: 'Password123' 
         };
 
-        // --- BÖLÜM 1: KAYIT ---
+      
         await registerPage.goto();
         const alertMessage = await registerPage.register(newUser);
         await expect(alertMessage).toContain('Sign up successful.'); 
 
-        // --- BÖLÜM 2: GİRİŞ ---
+     
         await loginPage.goto();
         await loginPage.login(newUser.username, newUser.password);
         
-        // Doğrulama
+        
         await loginPage.isLoggedIn(newUser.username);
 
         console.log(`✅ S3 Completed: Registration and immediate login verified for ${newUser.username}`);

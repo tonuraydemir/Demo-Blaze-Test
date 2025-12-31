@@ -8,19 +8,19 @@ test.describe('F5: Shopping Cart Management (Functional Test)', () => {
         const productPage = new ProductPage(page);
         const cartPage = new ShoppingCartPage(page);
 
-        // 1. ÖN KOŞUL: Ürünü sepete ekle (S2 mantığı)
+     
         await page.goto('/');
         await productPage.selectFirstProduct();
         const alertMessage = await productPage.addToCart();
-        await productPage.verifyAddToCartSuccess(alertMessage); // Başarılı eklendiğini doğrula
+        await productPage.verifyAddToCartSuccess(alertMessage); 
 
-        // 2. Sepete Git
+      
         await cartPage.goto();
         
-        // 3. Silme İşlemi
+        
         await cartPage.deleteFirstProduct();
 
-        // 4. Doğrulama (Assertion): Sepetin boş olduğunu kontrol et
+       
         await cartPage.verifyCartIsEmpty();
 
         console.log(`✅ F5 Completed: Item successfully deleted from cart.`);
