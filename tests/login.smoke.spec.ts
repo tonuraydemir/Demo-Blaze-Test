@@ -1,30 +1,46 @@
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../pages/LoginPage.js'; 
-// KRİTİK: Kayıt Testinde oluşturulan kullanıcıyı buraya import ediyoruz.
-import { TEST_USER } from './register.spec.js'; 
+import { LoginPage } from '../pages/LoginPage.js';
+import { RegisterPage } from '../pages/RegisterPage.js';
 
+// Her çalıştırmada benzersiz olacak bir kullanıcı verisi
+const SMOKE_USER = { 
+    username: `smoke_user_${Date.now()}`, 
+    password: 'Password123' 
+};
 
-// Test, import edilen TEST_USER nesnesini kullanacağı için, 
-// artık sabit bir VALID_USER tanımlamaya gerek yok.
+test.describe('S1: Successful User Login (Smoke Test)', () => {
 
-test.describe('S1: Successful User Login (Smoke Test - Demoblaze)', () => {
+    // TEST ÖNCESİ HAZIRLIK: Önce kullanıcıyı kaydet
+    test.beforeAll(async ({ browser }) => {
+        const context = await browser.newContext();
+        const page = await context.newPage();
+        const registerPage = new RegisterPage(page);
+
+        await registerPage.goto();
+        const alertMessage = await registerPage.register(SMOKE_USER);
+        
+        // Kayıt başarılı değilse hata fırlat
+        if (!alertMessage.includes('Sign up successful.')) {
+            throw new Error(`Ön Koşul Başarısız: Kayıt yapılamadı. Alert: ${alertMessage}`);
+        }
+        
+        await page.close();
+        await context.close();
+    });
 
     test('Registered user can successfully log in', async ({ page }) => {
         const loginPage = new LoginPage(page);
 
-        // Kullanıcı verilerini register.spec.js dosyasından alıyoruz.
-        const username = TEST_USER.username;
-        const password = TEST_USER.password;
-
-        // 1. Login modalını aç
+        // 1. Giriş modalına git
         await loginPage.goto();
 
-        // 2. Geçerli kullanıcı bilgileri ile giriş yap
-        await loginPage.login(username, password);
+        // 2. beforeAll içinde oluşturduğumuz kullanıcı ile giriş yap
+        await loginPage.login(SMOKE_USER.username, SMOKE_USER.password);
 
-        // 3. Girişin başarılı olduğunu doğrula
-        await loginPage.isLoggedIn(username);
-
-        console.log(`✅ S1 Completed: Login successful for user: ${username}`);
+        // 3. DOĞRULAMA: Welcome mesajı ve Logout linki
+        await loginPage.isLoggedIn(SMOKE_USER.username);
+        await expect(loginPage.logoutLink).toBeVisible();
+        
+        console.log(`✅ S1 Başarıyla Tamamlandı: ${SMOKE_USER.username}`);
     });
 });

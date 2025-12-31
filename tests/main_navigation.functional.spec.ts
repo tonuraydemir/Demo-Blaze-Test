@@ -1,28 +1,49 @@
-// /tests/main_navigation.functional.spec.ts dosyasında F10 test bloğu
+import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage.js';
+import { HomePage } from '../pages/HomePage.js';
 
-test('F10: User remains logged in after navigating via logo', async ({ page }) => {
-    const loginPage = new LoginPage(page);
-    const homePage = new HomePage(page);
+/**
+ * F18: Logo Navigasyonu ve Oturum Koruma Testi
+ * Bu test, kullanıcı giriş yaptıktan sonra "PRODUCT STORE" logosuna tıkladığında
+ * oturumun (session) sonlanmadığını doğrular.
+ */
 
-    const username = TEST_USER.username;
+test.describe('Main Navigation Functional Tests', () => {
 
-    // 1. ÖN KOŞUL: Başarılı bir şekilde giriş yap
-    await loginPage.goto();
-    await loginPage.login(username, TEST_USER.password);
-    
-    // KRİTİK EKLEME 1: Login sonrası 1 saniye bekle (DOM güncelleme süresi)
-    await page.waitForTimeout(1000); 
-    
-    await loginPage.isLoggedIn(username); // Giriş başarılı olduğunu kontrol et
+    test('F18: User remains logged in after navigating via logo', async ({ page }) => {
+        const loginPage = new LoginPage(page);
+        const homePage = new HomePage(page);
 
-    // 2. Aksiyon: Logoya tıkla ve ana sayfayı yeniden yükle
-    await homePage.clickLogo();
-    
-    // KRİTİK EKLEME 2: Logo navigasyonu sonrası 1 saniye bekle
-    await page.waitForTimeout(1000); 
+        // Sabit test hesabı
+        const username = 'test'; 
+        const password = 'test';
 
-    // 3. Doğrulama (Assertion): Oturumun devam ettiğini kontrol et
-    await loginPage.isLoggedIn(username); 
+        // 1. ADIM: Sayfaya git ve giriş yap
+        await page.goto('/');
+        await loginPage.goto(); 
+        await loginPage.login(username, password);
+        
+        // Giriş yapıldığını doğrula (Welcome mesajını bekle)
+        await loginPage.isLoggedIn(username); 
 
-    console.log(`✅ F10 Completed: Logo navigation and session persistence verified.`);
+        // 2. ADIM: "PRODUCT STORE" logosuna tıkla
+        // Chromium'da navigasyonun tamamlandığından emin olmak için waitForNavigation kullanıyoruz.
+        await Promise.all([
+            page.waitForNavigation({ waitUntil: 'load' }), 
+            homePage.clickLogo()
+        ]);
+
+        // 3. ADIM: Navigasyon sonrası sayfanın oturmasını bekle
+        // Chromium hızından kaynaklı hataları önlemek için kısa bir yükleme durumu bekliyoruz.
+        await page.waitForLoadState('domcontentloaded');
+
+        // 4. ADIM: DOĞRULAMA (Assertion)
+        // Welcome mesajının ve Logout linkinin hala orada olduğunu kontrol et
+        // timeout ekleyerek Chromium'un elementleri render etmesi için süre tanıyoruz.
+        await expect(loginPage.welcomeMessage).toBeVisible({ timeout: 10000 });
+        await expect(loginPage.welcomeMessage).toHaveText(`Welcome ${username}`);
+        await expect(loginPage.logoutLink).toBeVisible();
+
+        console.log(`✅ F18 Completed: Logo navigation on Product Store verified.`);
+    });
 });

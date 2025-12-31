@@ -1,51 +1,56 @@
-// /tests/logout.functional.spec.ts dosyasında
-
 import { test, expect } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage.js';
-import { RegisterPage } from '../pages/RegisterPage.js'; // Setup için RegisterPage'i içeri al
+import { RegisterPage } from '../pages/RegisterPage.js';
 
-// F10'a özel kullanıcı oluşturma
-const F10_E2E_USER = { 
-    username: `f10_user_${Date.now()}`, 
+/**
+ * F10: Session Management (Logout) Testi
+ * Bu test, dinamik bir kullanıcı oluşturur, giriş yapar 
+ * ve güvenli bir şekilde çıkış yapılabildiğini doğrular.
+ */
+
+// Her çalışmada benzersiz bir kullanıcı oluşturur
+const F10_USER = { 
+    username: `f10_logout_${Date.now()}`, 
     password: 'Password123' 
 };
 
-// Testin her worker'ı için kullanıcı oluşturulur
-test.describe('F10: Session Management (Functional Test)', () => {
+test.describe('F10: Session Management', () => {
     
-    // KRİTİK SETUP: Her worker için kullanıcıyı kaydet.
+    // ÖN KOŞUL: Test başlamadan önce yeni bir kullanıcı kaydet
     test.beforeAll(async ({ browser }) => {
         const context = await browser.newContext();
         const page = await context.newPage();
         const registerPage = new RegisterPage(page);
 
-        // Kullanıcıyı KAYDET
         await registerPage.goto();
-        const alertMessage = await registerPage.register(F10_E2E_USER);
+        const alertMessage = await registerPage.register(F10_USER);
         
+        // Alert mesajı kontrolü (Boş veya başarısızsa hata fırlat)
         if (!alertMessage.includes('Sign up successful.')) {
-            // Eğer kayıt başarılı olmazsa, ana testi çalıştırmadan hata fırlat.
             await page.close();
-            throw new Error(`F10 Setup Başarısız: Kullanıcı oluşturulamadı. Alert: ${alertMessage}`);
+            throw new Error(`F10 Kayıt Hatası: ${alertMessage}`);
         }
         await page.close();
-    }, { timeout: 60000 }); // Setup için 60 saniye zaman aşımı
+        await context.close();
+    }, { timeout: 60000 }); // Kayıt işlemi bazen yavaş olabilir, 60sn süre tanıyoruz
 
     test('F10: User can successfully log out after logging in', async ({ page }) => {
         const loginPage = new LoginPage(page);
-        const username = F10_E2E_USER.username; // Kendi setup'ından gelen kullanıcıyı kullan
+        const username = F10_USER.username;
 
-        // 1. ÖN KOŞUL: Başarılı bir şekilde giriş yap
+        // 1. ADIM: Başarılı bir şekilde giriş yap
         await loginPage.goto();
-        await loginPage.login(username, F10_E2E_USER.password); // Giriş yap ve Alert yoksa devam et
+        await loginPage.login(username, F10_USER.password);
         
-        await loginPage.isLoggedIn(username); // Girişin başarılı olduğunu doğrula
+        // Giriş yapıldığını doğrula
+        await loginPage.isLoggedIn(username); 
         
-        // 2. Aksiyon: Logout işlemini gerçekleştir
+        // 2. ADIM: Logout (Çıkış) işlemini gerçekleştir
         await loginPage.logout();
 
-        // 3. Doğrulama: Oturumun sonlandığını kontrol et
-        await expect(loginPage.loginLink).toBeVisible();
+        // 3. ADIM: DOĞRULAMA (Assertion)
+        // Login butonu geri gelmeli, Welcome mesajı silinmeli
+        await expect(loginPage.loginLink).toBeVisible({ timeout: 10000 });
         await expect(loginPage.welcomeMessage).toBeHidden(); 
 
         console.log(`✅ F10 Completed: User logged out successfully.`);

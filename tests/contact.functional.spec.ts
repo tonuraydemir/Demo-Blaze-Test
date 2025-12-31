@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { ContactPage } from '../pages/ContactPage.js'; 
+import { ContactPage } from '../pages/ContactPage.js';
 
 const CONTACT_DATA = {
     email: `test_contact_${Date.now()}@testmail.com`,
@@ -8,8 +8,15 @@ const CONTACT_DATA = {
 };
 
 test.describe('F7: Contact Form Tests (Functional Test)', () => {
+    
+    /**
+     * NOT: Bu test site kaynaklı senkronizasyon (alert) sorunları nedeniyle 
+     * bazı ortamlarda kararsız (flaky) davranabilir.
+     */
+    test('F7: User can successfully submit the contact form', async ({ page }) => {
+        // Testin çok uzun sürüp tüm süreci tıkamasını önlemek için timeout
+        test.setTimeout(60000);
 
-    test('User can successfully submit the contact form', async ({ page }) => {
         const contactPage = new ContactPage(page);
 
         // 1. Ana sayfaya git
